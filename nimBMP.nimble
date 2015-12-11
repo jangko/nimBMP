@@ -1,6 +1,6 @@
 [Package]
 name          = "nimBMP"
-version       = "0.1.1"
+version       = "0.1.2"
 author        = "Andri Lim"
 description   = "BMP encoder and decoder"
 license       = "MIT"

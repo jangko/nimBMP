@@ -100,21 +100,6 @@ const
   RLE_ENDOFBITMAP = 1
   RLE_DELTA       = 2
 
-proc toHex*(input: string) =
-  var i = 0
-  for x in 0..input.high:
-    write(stdout, toHex(ord(input[x]), 2))
-    inc i
-    if i == 40:
-      write(stdout, "\n")
-      i = 0
-  if i < 40:
-    write(stdout, "\n")
-
-proc show*[T](mode: T) =
-  for k, v in fieldPairs(mode):
-    echo k, " ", $v
-
 proc BMPError(msg: string): ref Exception =
   new(result)
   result.msg = msg

@@ -1,4 +1,4 @@
-import nimBMP, streams
+import nimBMP, streams, strutils
 
 type
   Image = object
@@ -13,6 +13,7 @@ proc assertEquals[T, U](expected: T, actual: U, message = "") =
     assert false
     
 proc testCodec(image: Image, expectedBpp: int) =
+  echo "w: $1, h: $2, expectedBpp: $3" % [$image.width, $image.height, $expectedBpp]
   var s = newStringStream()    
   s.encodeBMP(image.data, image.width, image.height, image.bitsPerPixel)
   s.setPosition 0
