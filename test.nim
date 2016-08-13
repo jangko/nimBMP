@@ -19,9 +19,9 @@ proc testCodec(image: Image, expectedBpp: int) =
   s.setPosition 0
   
   var bmp = s.decodeBMP()
-  assertEquals (bmp.width, image.width)
-  assertEquals (bmp.height, image.height)
-  assertEquals (bmp.bitsPerPixel, expectedBpp)
+  assertEquals(bmp.width, image.width)
+  assertEquals(bmp.height, image.height)
+  assertEquals(bmp.bitsPerPixel, expectedBpp)
   
   var data = bmp.convert(24)
   assertEquals(data.data, image.data)
