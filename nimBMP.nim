@@ -762,6 +762,13 @@ proc writeLE[T: BMPHeader|BMPInfo](s: Stream, val: T) =
   for field in fields(val): s.writeLE(field)
 
 proc encodeBMP*(s: Stream, input: string, w, h, bitsPerPixel: int) =
+  if bitsPerPixel notin {24,32}:
+    raise BMPError("unsupported bitsPerPixel: " & $bitsPerPixel)
+    
+  let expectedLen = ((bitsPerPixel div 8) * w * h)
+  if input.len < expectedLen:
+    raise BMPError("invalid input length, expected " & $expectedLen & " got " & $input.len)
+    
   let bmp = autoChooseColor(input, w, h, bitsPerPixel)
   let scanlineSize = 4 * ((w * bmp.bitsPerPixel + 31) div 32)
   let dataSize = scanlineSize * h
