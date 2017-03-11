@@ -1,4 +1,4 @@
-import nimBMP, streams, strutils
+import nimBMP, streams, strutils, os
 
 type
   Image = object
@@ -80,7 +80,8 @@ proc testCodec() =
 
   testCodec(image, 24) 
 
+  #this one must be visually inspected because of lossy algorithm
+  var bmp = loadBMP8("bmptestsuite-0.9"&DirSep&"valid"&DirSep&"24bpp-320x240.bmp")
+  saveBMP8("8bpp.bmp", bmp.data, bmp.width, bmp.height) 
+  
 testCodec()
-#var bmp = loadBMP24("bmptestsuite-0.9\\valid\\8bpp-320x240.bmp")
-#saveBMP24("8bpp.bmp", bmp.data, bmp.width, bmp.height)
-#var bmp = loadBMP24("8bpp.bmp") 
