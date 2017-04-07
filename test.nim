@@ -23,7 +23,7 @@ proc testCodec(image: Image, expectedBpp: int) =
   assertEquals(bmp.height, image.height)
   assertEquals(bmp.bitsPerPixel, expectedBpp)
   
-  var data = bmp.convert(24)
+  var data = convert[string](bmp, 24)
   assertEquals(data.data, image.data)
   
 proc testCodec() =

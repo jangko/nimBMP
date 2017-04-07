@@ -26,6 +26,9 @@ import nimBMP
 let bmp24 = loadBMP24("image24.bmp") #load bmp as RGB 24 bit
 let bmp32 = loadBMP32("image32.bmp") #load bmp as RGBX 32 bit
 
+the default container is string, if you want the output container is seq[uint8], you can specify it as second param
+let bmp24seq = loadBMP24("image24.bmp", seq[uint8]) #load bmp as RGB 24 bit into seq[uint8]
+let bmp32seq = loadBMP32("image32.bmp", seq[uint8]) #load bmp as RGBX 32 bit into seq[uint8]
 
 ```
 
@@ -44,7 +47,9 @@ import nimBMP
 
 saveBMP32("image32.bmp", rgbx_pixels, width, height)
 saveBMP24("image24.bmp", rgb_pixels, width, height)
+saveBMP8("image8.bmp", gray_pixels, width, height)
 
+the input pixels can be a sequence of bytes in string container or seq[uint8] container
 ```
 
 the internal algorithm of saveBMP will choose the best target format after it analyze the image's content.
