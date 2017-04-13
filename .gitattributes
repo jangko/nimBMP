@@ -15,3 +15,6 @@
 *.PDF	 diff=astextplain
 *.rtf	 diff=astextplain
 *.RTF	 diff=astextplain
+
+manual/* linguist-vendored
+bmptestsuite-0.9/* linguist-vendored
