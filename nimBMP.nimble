@@ -7,3 +7,5 @@ license       = "MIT"
 
 [Deps]
 Requires: "nim >= 0.11.2"
+
+skipDirs = @["test", "manual", "bmptestsuite-0.9"]
