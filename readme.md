@@ -1,4 +1,4 @@
-#nimBMP
+# nimBMP
 BMP Encoder and Decoder written in Nim
 
 supported standard color mode:
@@ -18,7 +18,7 @@ Supported color conversions:
 - automatic palette generation
 
 
-##Basic Usage
+## Basic Usage
 
 ```nimrod
 import nimBMP
@@ -42,7 +42,7 @@ the returned object from loadBMP24 or loadBMP32 have fields:
      * loadBMP32 will produce r1,g1,b1,x1,...,rn,gn,bn,xn
      
      
-##Create BMP from raw pixels
+## Create BMP from raw pixels
 
 ```nimrod
 import nimBMP
