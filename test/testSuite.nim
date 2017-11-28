@@ -2,7 +2,7 @@ import nimBMP, os, strutils, nimPNG
 
 proc convert(src, dest: string) =
   var bmp = loadBMP24(src)
-  if bmp != nil:
+  if bmp.data != nil:
     discard savePNG24(dest, bmp.data, bmp.width, bmp.height)
     
 proc convert(dir: string) =
@@ -10,7 +10,7 @@ proc convert(dir: string) =
     let path = splitFile(fileName)
     if path.ext.len() == 0: continue
 
-    let ext = toLower(path.ext)
+    let ext = toLowerAscii(path.ext)
     if ext != ".bmp": continue
     if path.name[0] == 'x': continue
 

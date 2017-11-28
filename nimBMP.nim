@@ -127,7 +127,7 @@ proc readDWORD(s: Stream): DWORD =
 
 proc skip(s: Stream, nums: int) =
   var tmp: char
-  for i in 0.. <nums: tmp = s.readChar()
+  for i in 0..<nums: tmp = s.readChar()
 
 proc pow(base: int, exponent: int): int =
   result = 1
@@ -180,7 +180,7 @@ proc createStandardPalette(bmp: BMP) =
       bmp.palette[i].b = x[3]
 
 proc read32bitRow(bmp: BMP, input: string, row: int) =
-  for i in 0.. <bmp.width:
+  for i in 0..<bmp.width:
     let px = row * bmp.width + i
     let cx = i * 4
     bmp.pixels[px].b = BYTE(input[cx])
@@ -189,7 +189,7 @@ proc read32bitRow(bmp: BMP, input: string, row: int) =
     bmp.pixels[px].a = BYTE(input[cx+4])
 
 proc read24bitRow(bmp: BMP, input: string, row: int) =
-  for i in 0.. <bmp.width:
+  for i in 0..<bmp.width:
     let px = row * bmp.width + i
     let cx = i * 3
     bmp.pixels[px].b = BYTE(input[cx])
@@ -197,7 +197,7 @@ proc read24bitRow(bmp: BMP, input: string, row: int) =
     bmp.pixels[px].r = BYTE(input[cx+2])
 
 proc read8bitRow(bmp: BMP, input: string, row: int) =
-  for i in 0.. <bmp.width:
+  for i in 0..<bmp.width:
     bmp.pixels[row * bmp.width + i] = bmp.palette[input[i].ord]
 
 proc read4bitRow(bmp: BMP, input: string, row: int) =
@@ -290,7 +290,7 @@ proc readPixels16(bmp: BMP, s: Stream, bytesToSkip: int) =
   let RShift = makeShift(RMask)
 
   template read16bitRow(): untyped =
-    for i in 0.. <bmp.width:
+    for i in 0..<bmp.width:
       var val = s.readWORD()
       let px = row * bmp.width + i
       bmp.pixels[px].r = BYTE(WORD(8)*((RMask and val) shr RShift))
@@ -329,7 +329,7 @@ proc readPixelsRLE4(bmp: BMP, s: Stream) =
       if s.atEnd(): break
       secondByte = s.readChar.ord
 
-      for i in 0.. <count:
+      for i in 0..<count:
         if (i and 0x01) != 0: bmp.pixels[start + bits] = bmp.palette[secondByte and 0x0F]
         else: bmp.pixels[start + bits] = bmp.palette[(secondByte shr 4) and 0x0F]
         inc bits
@@ -359,7 +359,7 @@ proc readPixelsRLE4(bmp: BMP, s: Stream) =
         #Absolute mode
         let count = min(statusByte, bmp.width - bits)
         let start = bmp.getScanLine(scanLine)
-        for i in 0.. <count:
+        for i in 0..<count:
           if(i and 0x01) == 0:
             if s.atEnd(): break
             secondByte = s.readChar.ord
@@ -408,7 +408,7 @@ proc readPixelsRLE8(bmp: BMP, s: Stream) =
         if scanLine >= bmp.height: return
         let count = min(statusByte, bmp.width - bits)
         let start = bmp.getScanLine(scanLine)
-        for i in 0.. <count:
+        for i in 0..<count:
           if s.atEnd(): return
           secondByte = s.readChar.ord
           bmp.pixels[start + bits] = bmp.palette[secondByte]
@@ -424,7 +424,7 @@ proc readPixelsRLE8(bmp: BMP, s: Stream) =
       let start = bmp.getScanLine(scanLine)
       if s.atEnd(): return
       secondByte = s.readChar.ord
-      for i in 0.. <count:
+      for i in 0..<count:
         bmp.pixels[start + bits] = bmp.palette[secondByte]
         inc bits
 
@@ -451,7 +451,7 @@ proc readPixels32(bmp: BMP, s: Stream, bytesToSkip: int) =
   let maxB = BMask shr BShift
 
   template read32bitMasked(): untyped =
-    for i in 0.. <bmp.width:
+    for i in 0..<bmp.width:
       var val = s.readDWORD()
       let px = row * bmp.width + i
       let R = ((RMask and val) shr RShift).float / maxR.float
@@ -533,12 +533,12 @@ proc decodeBMP*(s: Stream): BMP =
     bmp.palette = newSeq[BMPRGBA](numColors)
     bmp.createStandardPalette()
 
-    for n in 0.. <paletteSize:
+    for n in 0..<paletteSize:
       if s.readData(addr(bmp.palette[n]), 4) != 4:
         raise BMPError("error when reading palette")
 
     let BLACK = BMPRGBA(r: 0, g: 0, b: 0, a: 0)
-    for n in paletteSize.. <numColors: bmp.palette[n] = BLACK
+    for n in paletteSize..<numColors: bmp.palette[n] = BLACK
 
   var bytesToSkip = int(header.offset - 54)
   if bmp.bitsPerPixel < 16: bytesToSkip -= 4 * 2.pow(bmp.bitsPerPixel)
@@ -577,7 +577,7 @@ template getValueT(x: typedesc[seq[uint8]]): typedesc = uint8
 proc convertTo32Bit*[T](bmp: BMP, res: var BMPResult[T]) =
   type ValueT = getValueT(T)
   let numPixels = bmp.width * bmp.height
-  for i in 0.. <numPixels:
+  for i in 0..<numPixels:
     let px = i * 4
     res.data[px + 0] = ValueT(bmp.pixels[i].r)
     res.data[px + 1] = ValueT(bmp.pixels[i].g)
@@ -587,7 +587,7 @@ proc convertTo32Bit*[T](bmp: BMP, res: var BMPResult[T]) =
 proc convertTo24Bit*[T](bmp: BMP, res: var BMPResult[T]) =
   type ValueT = getValueT(T)
   let numPixels = bmp.width * bmp.height
-  for i in 0.. <numPixels:
+  for i in 0..<numPixels:
     let px = i * 3
     res.data[px + 0] = ValueT(bmp.pixels[i].r)
     res.data[px + 1] = ValueT(bmp.pixels[i].g)
@@ -596,7 +596,7 @@ proc convertTo24Bit*[T](bmp: BMP, res: var BMPResult[T]) =
 proc convertTo8Bit*[T](bmp: BMP, res: var BMPResult[T]) =
   type ValueT = getValueT(T)
   let numPixels = bmp.width * bmp.height
-  for i in 0.. <numPixels:
+  for i in 0..<numPixels:
     var p = bmp.pixels[i]
     res.data[i] = ValueT((p.r.int*77 + p.g.int*150 + p.b.int*29) shr 8)
 
@@ -658,22 +658,22 @@ proc hash*(c: BMPRGBA): Hash =
   h = h !& ord(c.a)
 
 proc pixelFromGray8(p: var BMPRGBA, input: InputContainer, px: int) =
-  p.r = input[px].ord
-  p.g = input[px].ord
-  p.b = input[px].ord
+  p.r = BYTE(input[px])
+  p.g = BYTE(input[px])
+  p.b = BYTE(input[px])
 
 proc pixelFromRGB24(p: var BMPRGBA, input: InputContainer, px: int) =
   let y = px * 3
-  p.r = input[y].ord
-  p.g = input[y + 1].ord
-  p.b = input[y + 2].ord
+  p.r = BYTE(input[y])
+  p.g = BYTE(input[y + 1])
+  p.b = BYTE(input[y + 2])
 
 proc pixelFromRGB32(p: var BMPRGBA, input: InputContainer, px: int) =
   let y = px * 4
-  p.r = input[y].ord
-  p.g = input[y + 1].ord
-  p.b = input[y + 2].ord
-  p.a = input[y + 3].ord
+  p.r = BYTE(input[y])
+  p.g = BYTE(input[y + 1])
+  p.b = BYTE(input[y + 2])
+  p.a = BYTE(input[y + 3])
 
 proc pixelFromNoColor(p: var BMPRGBA, input: InputContainer, px: int) =
   discard
@@ -694,7 +694,7 @@ proc countColors(input: InputContainer, w, h, bitsPerPixel: int, colors: var Ord
     cvt = getCvt[input.type](bitsPerPixel)
     numColors = 0
 
-  for px in 0.. <numPixels:
+  for px in 0..<numPixels:
     cvt(p, input, px)
     if not colors.hasKey(p):
       if numColors < 256:
@@ -739,7 +739,7 @@ proc encode4Bit(bmp: var BMPEncoder, input: InputContainer, w, h: int) =
 
   for row in countdown(h - 1, 0):
     let start = row * scanLineSize
-    for x in 0.. <w:
+    for x in 0..<w:
       let y = start + (x div 2)
       bmp.cvt(p, input, px)
       inc px
@@ -759,7 +759,7 @@ proc encode8Bit(bmp: var BMPEncoder, input: InputContainer, w, h: int) =
 
   for row in countdown(h - 1, 0):
     var y = row * scanLineSize
-    for x in 0.. <w:
+    for x in 0..<w:
       bmp.cvt(p, input, px)
       bmp.pixels[row * scanLineSize + x] = bmp.colors[p].chr
       inc y
@@ -776,7 +776,7 @@ proc encode24Bit(bmp: var BMPEncoder, input: InputContainer, w, h: int) =
 
   for row in countdown(h - 1, 0):
     let start = row * scanLineSize
-    for x in 0.. <w:
+    for x in 0..<w:
       let y = start + x * 3
       bmp.cvt(p, input, px)
       bmp.pixels[y]     = chr(p.b)
