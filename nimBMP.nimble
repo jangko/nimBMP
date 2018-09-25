@@ -1,9 +1,7 @@
-[Package]
-name          = "nimBMP"
-version       = "0.1.5"
+packageName   = "nimBMP"
+version       = "0.1.6"
 author        = "Andri Lim"
 description   = "BMP encoder and decoder"
 license       = "MIT"
 
-[Deps]
-Requires: "nim >= 0.11.2"
+requires: "nim >= 0.11.2"
