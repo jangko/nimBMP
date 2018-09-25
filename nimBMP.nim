@@ -186,7 +186,7 @@ proc read32bitRow(bmp: BMP, input: string, row: int) =
     bmp.pixels[px].b = BYTE(input[cx])
     bmp.pixels[px].g = BYTE(input[cx+1])
     bmp.pixels[px].r = BYTE(input[cx+2])
-    bmp.pixels[px].a = BYTE(input[cx+4])
+    bmp.pixels[px].a = BYTE(input[cx+3])
 
 proc read24bitRow(bmp: BMP, input: string, row: int) =
   for i in 0..<bmp.width:
