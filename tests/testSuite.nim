@@ -35,6 +35,7 @@ proc compareFile(src, tgt: string): bool =
   if not fileExists(tgt) and bmp.data.len == 0:
     return true
 
+  if bmp.data.len == 0: return false
   let miniBMP = newMiniBMP(bmp.data, bmp.width, bmp.height)
   let target = readFile(tgt)
   result = miniBMP.compare(target)
@@ -66,6 +67,7 @@ when isMainModule:
   proc main() =
     var success = true
     let baseDir = ".." & DirSep & "bmptestsuite-0.9" & DirSep
+
     success = success and compareSuite(baseDir, "corrupt")
     success = success and compareSuite(baseDir, "questionable")
     success = success and compareSuite(baseDir, "valid")
