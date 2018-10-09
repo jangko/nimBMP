@@ -292,7 +292,7 @@ proc readPixels16(bmp: BMP, s: Stream, bytesToSkip: int) =
   template read16bitRow(): untyped =
     for i in 0..<bmp.width:
       var val = s.readWORD()
-      let px = row * bmp.width + i
+      let px = int(uint(row) * uint(bmp.width) + uint(i))
       bmp.pixels[px].r = BYTE(WORD(8)*((RMask and val) shr RShift))
       bmp.pixels[px].g = BYTE(WORD(8)*((GMask and val) shr GShift))
       bmp.pixels[px].b = BYTE(WORD(8)*((BMask and val) shr BShift))
@@ -516,15 +516,15 @@ proc decodeBMP*(s: Stream): BMP =
     raise BMPError("unsupported compression: " & $info.compression)
 
   if bmp.compression in {BC_NONE, BC_BITFIELDS}:
-    let scanlineSize = 4 * ((int(info.width) * int(info.bitsPerPixel) + 31) div 32)
-    let dataSize = scanlineSize * int(info.height)
+    let scanlineSize = 4'i64 * ((int64(info.width) * int64(info.bitsPerPixel) + 31'i64) div 32'i64)
+    let dataSize = scanlineSize * int64(info.height)
 
     if info.imageSize == 0:
       info.imageSize = DWORD(dataSize)
-      if dataSize + int(header.offset) != int(header.fileSize):
+      if dataSize + int64(header.offset) != int64(header.fileSize):
         raise BMPError("invalid dataSize")
 
-    if dataSize > int(info.imageSize):
+    if dataSize > int64(info.imageSize):
       raise BMPError("invalid width x height")
 
   if (bmp.compression == BC_BITFIELDS) and bmp.bitsPerPixel notin {16, 32}:
@@ -563,6 +563,7 @@ proc decodeBMP*(s: Stream): BMP =
 
   if bmp.width < 0: bmp.width = -1 * bmp.width #another bad value
   bmp.pixels = newSeq[BMPRGBA](bmp.width * bmp.height)
+
   if bmp.bitsPerPixel == 16: bmp.readPixels16(s, bytesToSkip)
   else:
     if bmp.compression == BC_BITFIELDS: bmp.readPixels32(s, bytesToSkip)
@@ -863,7 +864,7 @@ proc encodeBMP*(s: Stream, input: InputContainer, w, h, bitsPerPixel: int) =
   info.vertResolution = DefaultYPelsPerMeter
   info.colorUsed = DWORD(bmp.colors.len)
   info.colorImportant = 0
-  
+
   s.write BMPSignature
   s.writeLE header
   s.writeLE info
