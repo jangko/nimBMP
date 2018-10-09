@@ -66,7 +66,7 @@ type
     fileSize: DWORD
     reserved1: WORD
     reserved2: WORD
-    offset: DWORD
+    offset: LONG
 
   BMPInfo = object
     size: DWORD
@@ -496,6 +496,9 @@ proc decodeBMP*(s: Stream): BMP =
   if info.size != 40:
     raise BMPError("wrong BMP version, only supported version 3.0")
 
+  if header.offset <= 0:
+    header.offset = LONG(54 + int(info.colorUsed) * 4)
+
   bmp.width = info.width
   bmp.height = info.height
   bmp.inverted = true
@@ -511,6 +514,18 @@ proc decodeBMP*(s: Stream): BMP =
   bmp.compression = BMPCompression(info.compression)
   if bmp.compression notin {BC_NONE, BC_RLE4, BC_RLE8, BC_BITFIELDS}:
     raise BMPError("unsupported compression: " & $info.compression)
+
+  if bmp.compression in {BC_NONE, BC_BITFIELDS}:
+    let scanlineSize = 4 * ((int(info.width) * int(info.bitsPerPixel) + 31) div 32)
+    let dataSize = scanlineSize * int(info.height)
+
+    if info.imageSize == 0:
+      info.imageSize = DWORD(dataSize)
+      if dataSize + int(header.offset) != int(header.fileSize):
+        raise BMPError("invalid dataSize")
+
+    if dataSize > int(info.imageSize):
+      raise BMPError("invalid width x height")
 
   if (bmp.compression == BC_BITFIELDS) and bmp.bitsPerPixel notin {16, 32}:
     raise BMPError("Bitfields Compression only for 16, 32 bits")
@@ -565,7 +580,7 @@ proc loadBMP*(fileName: string): BMP =
     result = s.decodeBMP()
     s.close()
   except:
-    debugEcho getCurrentExceptionMsg()
+    debugEcho fileName, " ", getCurrentExceptionMsg()
     result = nil
 
 template construct(x: typedesc[string], size: int): untyped = newString(size)
@@ -834,7 +849,7 @@ proc encodeBMP*(s: Stream, input: InputContainer, w, h, bitsPerPixel: int) =
   header.fileSize  = DWORD(offset + dataSize)
   header.reserved1 = WORD(0)
   header.reserved2 = WORD(0)
-  header.offset    = DWORD(offset)
+  header.offset    = LONG(offset)
 
   var info: BMPInfo
   info.size   = 40
@@ -848,7 +863,7 @@ proc encodeBMP*(s: Stream, input: InputContainer, w, h, bitsPerPixel: int) =
   info.vertResolution = DefaultYPelsPerMeter
   info.colorUsed = DWORD(bmp.colors.len)
   info.colorImportant = 0
-
+  
   s.write BMPSignature
   s.writeLE header
   s.writeLE info
