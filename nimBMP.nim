@@ -92,9 +92,9 @@ type
     data*: T
     width*, height*: int
 
-  InputContainer* = string or seq[uint8]
+  InputContainer* = string or seq[uint8] or seq[byte]
 
-  ScanlineReader = proc(bmp: BMP, input: string, row: int)
+  ScanlineReader = proc(bmp: BMP, input: openArray[byte], row: int)
 
 const
   RLE_COMMAND     = 0
@@ -179,7 +179,7 @@ proc createStandardPalette(bmp: BMP) =
       bmp.palette[i].g = x[2]
       bmp.palette[i].b = x[3]
 
-proc read32bitRow(bmp: BMP, input: string, row: int) =
+proc read32bitRow(bmp: BMP, input: openArray[byte], row: int) =
   for i in 0..<bmp.width:
     let px = row * bmp.width + i
     let cx = i * 4
@@ -188,7 +188,7 @@ proc read32bitRow(bmp: BMP, input: string, row: int) =
     bmp.pixels[px].r = BYTE(input[cx+2])
     bmp.pixels[px].a = BYTE(input[cx+3])
 
-proc read24bitRow(bmp: BMP, input: string, row: int) =
+proc read24bitRow(bmp: BMP, input: openArray[byte], row: int) =
   for i in 0..<bmp.width:
     let px = row * bmp.width + i
     let cx = i * 3
@@ -196,24 +196,24 @@ proc read24bitRow(bmp: BMP, input: string, row: int) =
     bmp.pixels[px].g = BYTE(input[cx+1])
     bmp.pixels[px].r = BYTE(input[cx+2])
 
-proc read8bitRow(bmp: BMP, input: string, row: int) =
+proc read8bitRow(bmp: BMP, input: openArray[byte], row: int) =
   for i in 0..<bmp.width:
-    bmp.pixels[row * bmp.width + i] = bmp.palette[input[i].ord]
+    bmp.pixels[row * bmp.width + i] = bmp.palette[input[i].int]
 
-proc read4bitRow(bmp: BMP, input: string, row: int) =
+proc read4bitRow(bmp: BMP, input: openArray[byte], row: int) =
   var i = 0
   var k = 0
   while i < bmp.width:
-    var index = (input[k].ord shr 4) and 0x0F
+    var index = (input[k].int shr 4) and 0x0F
     bmp.pixels[row * bmp.width + i] = bmp.palette[index]
     inc i
     if i < bmp.width: #odd width
-      index = input[k].ord and 0x0F
+      index = input[k].int and 0x0F
       bmp.pixels[row * bmp.width + i] = bmp.palette[index]
       inc i
     inc k
 
-proc read1bitRow(bmp: BMP, input: string, row: int) =
+proc read1bitRow(bmp: BMP, input: openArray[byte], row: int) =
   var
     i = 0
     j = 0
@@ -222,7 +222,7 @@ proc read1bitRow(bmp: BMP, input: string, row: int) =
   while i < bmp.width:
     j = 0
     while j < 8 and i < bmp.width:
-      let index = (input[k].ord shr (7 - j)) and 0x01
+      let index = (input[k].int shr (7 - j)) and 0x01
       bmp.pixels[bmp.width * row + i] = bmp.palette[index]
       inc i
       inc j
@@ -239,18 +239,18 @@ proc getScanlineReader(bmp: BMP): ScanlineReader =
 
 proc readPixels(bmp: BMP, s: Stream) =
   let scanlineSize = 4 * ((bmp.width * bmp.bitsPerPixel + 31) div 32)
-  var scanLine = newString(scanlineSize)
+  var scanLine = newSeq[byte](scanlineSize)
   let rowReader = bmp.getScanlineReader()
 
   if bmp.inverted:
     for row in countdown(bmp.height-1, 0):
-      if s.readData(cstring(scanLine), scanlineSize) != scanlineSize:
+      if s.readData(scanLine[0].addr, scanlineSize) != scanlineSize:
         #raise BMPError("error reading bitmap scanline")
         break
       bmp.rowReader(scanLine, row)
   else:
     for row in countup(0, bmp.height-1):
-      if s.readData(cstring(scanLine), scanlineSize) != scanlineSize:
+      if s.readData(scanLine[0].addr, scanlineSize) != scanlineSize:
         #raise BMPError("error reading bitmap scanline")
         break
       bmp.rowReader(scanLine, row)
@@ -586,9 +586,11 @@ proc loadBMP*(fileName: string): BMP =
 
 template construct(x: typedesc[string], size: int): untyped = newString(size)
 template construct(x: typedesc[seq[uint8]], size: int): untyped = newSeq[uint8](size)
+template construct(x: typedesc[seq[byte]], size: int): untyped = newSeq[byte](size)
 
 template getValueT(x: typedesc[string]): typedesc = char
 template getValueT(x: typedesc[seq[uint8]]): typedesc = uint8
+template getValueT(x: typedesc[seq[byte]]): typedesc = byte
 
 proc convertTo32Bit*[T](bmp: BMP, res: var BMPResult[T]) =
   type ValueT = getValueT(T)
@@ -659,12 +661,12 @@ template loadBMP8*(fileName: string): untyped =
   loadBMP8Aux[string](fileName)
 
 type
-  ConvertT[T] = proc(p: var BMPRGBA, input: T, px: int)
-  BMPEncoder[T] = object
+  ConvertT = proc(p: var BMPRGBA, input: openArray[byte], px: int)
+  BMPEncoder = object
     bitsPerPixel: int
     colors: OrderedTable[BMPRGBA, int]
-    pixels: string
-    cvt: ConvertT[T]
+    pixels: seq[byte]
+    cvt: ConvertT
 
 proc hash*(c: BMPRGBA): Hash =
   var h: Hash = 0
@@ -673,41 +675,41 @@ proc hash*(c: BMPRGBA): Hash =
   h = h !& ord(c.b)
   h = h !& ord(c.a)
 
-proc pixelFromGray8(p: var BMPRGBA, input: InputContainer, px: int) =
+proc pixelFromGray8(p: var BMPRGBA, input: openArray[byte], px: int) =
   p.r = BYTE(input[px])
   p.g = BYTE(input[px])
   p.b = BYTE(input[px])
 
-proc pixelFromRGB24(p: var BMPRGBA, input: InputContainer, px: int) =
+proc pixelFromRGB24(p: var BMPRGBA, input: openArray[byte], px: int) =
   let y = px * 3
   p.r = BYTE(input[y])
   p.g = BYTE(input[y + 1])
   p.b = BYTE(input[y + 2])
 
-proc pixelFromRGB32(p: var BMPRGBA, input: InputContainer, px: int) =
+proc pixelFromRGB32(p: var BMPRGBA, input: openArray[byte], px: int) =
   let y = px * 4
   p.r = BYTE(input[y])
   p.g = BYTE(input[y + 1])
   p.b = BYTE(input[y + 2])
   p.a = BYTE(input[y + 3])
 
-proc pixelFromNoColor(p: var BMPRGBA, input: InputContainer, px: int) =
+proc pixelFromNoColor(p: var BMPRGBA, input: openArray[byte], px: int) =
   discard
 
-proc getCvt[T](bitsPerPixel: int): ConvertT[T] =
+proc getCvt(bitsPerPixel: int): ConvertT =
   case bitsPerPixel
   of 8:  result = pixelFromGray8
   of 24: result = pixelFromRGB24
   of 32: result = pixelFromRGB32
   else:  result = pixelFromNoColor
 
-proc countColors(input: InputContainer, w, h, bitsPerPixel: int, colors: var OrderedTable[BMPRGBA, int]): int =
+proc countColors(input: openArray[byte], w, h, bitsPerPixel: int, colors: var OrderedTable[BMPRGBA, int]): int =
   let numPixels = w * h
   assert bitsPerPixel in {8, 24, 32}
 
   var
     p: BMPRGBA
-    cvt = getCvt[input.type](bitsPerPixel)
+    cvt = getCvt(bitsPerPixel)
     numColors = 0
 
   for px in 0..<numPixels:
@@ -720,10 +722,13 @@ proc countColors(input: InputContainer, w, h, bitsPerPixel: int, colors: var Ord
 
   result = numColors
 
-proc encode1Bit(bmp: var BMPEncoder, input: InputContainer, w, h: int) =
-  let scanlineSize = 4 * ((w * bmp.bitsPerPixel + 31) div 32)
+template calcScanline(bmp: var BMPEncoder, w, h) =
+  let scanlineSize {.inject.} = 4 * ((w * bmp.bitsPerPixel + 31) div 32)
   let size = scanlineSize * h
-  bmp.pixels = newString(size)
+  bmp.pixels = newSeq[byte](size)
+
+proc encode1Bit(bmp: var BMPEncoder, input: openArray[byte], w, h: int) =
+  calcScanline(bmp, w, h)
 
   var
     px = 0
@@ -741,13 +746,11 @@ proc encode1Bit(bmp: var BMPEncoder, input: InputContainer, w, h: int) =
         inc px
         inc z
         inc x
-      bmp.pixels[y] = t.chr
+      bmp.pixels[y] = byte(t)
       inc y
 
-proc encode4Bit(bmp: var BMPEncoder, input: InputContainer, w, h: int) =
-  let scanlineSize = 4 * ((w * bmp.bitsPerPixel + 31) div 32)
-  let size = scanlineSize * h
-  bmp.pixels = newString(size)
+proc encode4Bit(bmp: var BMPEncoder, input: openArray[byte], w, h: int) =
+  calcScanline(bmp, w, h)
 
   var
     px = 0
@@ -760,31 +763,26 @@ proc encode4Bit(bmp: var BMPEncoder, input: InputContainer, w, h: int) =
       bmp.cvt(p, input, px)
       inc px
       if (x mod 2) == 0:
-        bmp.pixels[y] = chr((bmp.colors[p] and 0x0F) shl 4)
+        bmp.pixels[y] = byte((bmp.colors[p] and 0x0F) shl 4)
       else:
-        bmp.pixels[y] = chr(bmp.pixels[y].ord or (bmp.colors[p] and 0x0F))
+        bmp.pixels[y] = byte(bmp.pixels[y].ord or (bmp.colors[p] and 0x0F))
 
-proc encode8Bit(bmp: var BMPEncoder, input: InputContainer, w, h: int) =
-  let scanlineSize = 4 * ((w * bmp.bitsPerPixel + 31) div 32)
-  let size = scanlineSize * h
-  bmp.pixels = newString(size)
+proc encode8Bit(bmp: var BMPEncoder, input: openArray[byte], w, h: int) =
+  calcScanline(bmp, w, h)
 
   var
     px = 0
     p: BMPRGBA
 
   for row in countdown(h - 1, 0):
-    var y = row * scanLineSize
+    let y = row * scanLineSize
     for x in 0..<w:
       bmp.cvt(p, input, px)
-      bmp.pixels[row * scanLineSize + x] = bmp.colors[p].chr
-      inc y
+      bmp.pixels[y + x] = byte(bmp.colors[p])
       inc px
 
-proc encode24Bit(bmp: var BMPEncoder, input: InputContainer, w, h: int) =
-  let scanlineSize = 4 * ((w * bmp.bitsPerPixel + 31) div 32)
-  let size = scanlineSize * h
-  bmp.pixels = newString(size)
+proc encode24Bit(bmp: var BMPEncoder, input: openArray[byte], w, h: int) =
+  calcScanline(bmp, w, h)
 
   var
     px = 0
@@ -795,17 +793,17 @@ proc encode24Bit(bmp: var BMPEncoder, input: InputContainer, w, h: int) =
     for x in 0..<w:
       let y = start + x * 3
       bmp.cvt(p, input, px)
-      bmp.pixels[y]     = chr(p.b)
-      bmp.pixels[y + 1] = chr(p.g)
-      bmp.pixels[y + 2] = chr(p.r)
+      bmp.pixels[y]     = byte(p.b)
+      bmp.pixels[y + 1] = byte(p.g)
+      bmp.pixels[y + 2] = byte(p.r)
       inc px
 
-proc autoChooseColor[T](input: T, w, h, bitsPerPixel: int): BMPEncoder[T] =
+proc autoChooseColor(input: openArray[byte], w, h, bitsPerPixel: int): BMPEncoder =
   var
     colors = initOrderedTable[BMPRGBA, int]()
     numColors = countColors(input, w, h, bitsPerPixel, colors)
 
-  result.cvt = getCvt[T](bitsPerPixel)
+  result.cvt = getCvt(bitsPerPixel)
   result.colors = colors
 
   if numColors <= 2:
@@ -833,7 +831,7 @@ proc writeLE[T: WORD|DWORD|LONG](s: Stream, val: T) =
 proc writeLE[T: BMPHeader|BMPInfo](s: Stream, val: T) =
   for field in fields(val): s.writeLE(field)
 
-proc encodeBMP*(s: Stream, input: InputContainer, w, h, bitsPerPixel: int) =
+proc encodeBMP*(s: Stream, input: openArray[byte], w, h, bitsPerPixel: int) =
   if bitsPerPixel notin {8,24,32}:
     raise BMPError("unsupported bitsPerPixel: " & $bitsPerPixel)
 
@@ -873,19 +871,27 @@ proc encodeBMP*(s: Stream, input: InputContainer, w, h, bitsPerPixel: int) =
     var tmp = k
     s.writeData(addr(tmp), 4)
 
-  s.write bmp.pixels
+  s.writeData(bmp.pixels[0].unsafeAddr, bmp.pixels.len)
 
-proc saveBMP32*(fileName: string, input: InputContainer, w, h: int) =
+template makeOpenArray(p: pointer, T: type, len: int): auto =
+  toOpenArray(cast[ptr UncheckedArray[T]](p), 0, len - 1)
+
+proc encodeBMP*(s: Stream, input: InputContainer, w, h, bitsPerPixel: int) {.inline.} =
+  s.encodeBMP(makeOpenArray(input[0].unsafeAddr, byte, input.len), w, h, bitsPerPixel)
+
+proc saveBMP*(fileName: string, input: openArray[byte], w, h: int, bpp: static[int]) =
   var s = newFileStream(fileName, fmWrite)
-  s.encodeBMP(input, w, h, 32)
+  s.encodeBMP(input, w, h, bpp)
   s.close()
 
-proc saveBMP24*(fileName: string, input: InputContainer, w, h: int) =
-  var s = newFileStream(fileName, fmWrite)
-  s.encodeBMP(input, w, h, 24)
-  s.close()
+template saveBMP*(fileName: string, input: InputContainer, w, h: int, bpp: static[int]) =
+  saveBMP(fileName, makeOpenArray(input[0].unsafeAddr, byte, input.len), w, h, bpp)
 
-proc saveBMP8*(fileName: string, input: InputContainer, w, h: int) =
-  var s = newFileStream(fileName, fmWrite)
-  s.encodeBMP(input, w, h, 8)
-  s.close()
+proc saveBMP32*(fileName: string, input: InputContainer, w, h: int) {.inline.} =
+  saveBMP(fileName, input, w, h, 32)
+
+proc saveBMP24*(fileName: string, input: InputContainer, w, h: int) {.inline.} =
+  saveBMP(fileName, input, w, h, 24)
+
+proc saveBMP8*(fileName: string, input: InputContainer, w, h: int) {.inline.} =
+  saveBMP(fileName, input, w, h, 8)

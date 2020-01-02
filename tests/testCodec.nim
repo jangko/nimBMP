@@ -99,7 +99,7 @@ when false:
 proc testGray(): bool =
   let graySuite = "gray"
   createDir(graySuite)
-  let suiteDir = ".." & DirSep & "bmptestsuite-0.9" & DirSep
+  let suiteDir = "bmptestsuite-0.9" & DirSep
   var bmp = loadBMP8(suiteDir & "valid" & DirSep & "24bpp-320x240.bmp")
 
   saveBMP8(graySuite & DirSep & "8bpp.bmp", bmp.data, bmp.width, bmp.height)
@@ -110,7 +110,7 @@ when isMainModule:
   proc main() =
     var success = true
     success = success and testCodec()
-    success = success and testGray()
+    #success = success and testGray()
     quit(if success: 0 else: -1)
 
   main()
