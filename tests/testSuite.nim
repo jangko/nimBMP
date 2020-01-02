@@ -10,7 +10,7 @@ when false:
     miniBMP.save(dest)
 
   proc convertPNG(suite: string) =
-    let baseDir = ".." & DirSep & "bmptestsuite-0.9" & DirSep
+    let baseDir = "bmptestsuite-0.9" & DirSep
     let suiteDir = baseDir & suite
     for fileName in walkDirRec(suiteDir, {pcFile}):
       let path = splitFile(fileName)
@@ -66,7 +66,7 @@ proc compareSuite*(baseDir, suite: string): bool =
 when isMainModule:
   proc main() =
     var success = true
-    let baseDir = ".." & DirSep & "bmptestsuite-0.9" & DirSep
+    let baseDir = "bmptestsuite-0.9" & DirSep
 
     success = success and compareSuite(baseDir, "corrupt")
     success = success and compareSuite(baseDir, "questionable")
