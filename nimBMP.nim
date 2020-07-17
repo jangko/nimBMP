@@ -521,7 +521,7 @@ proc decodeBMP*(s: Stream): BMP =
 
     if info.imageSize == 0:
       info.imageSize = DWORD(dataSize)
-      if dataSize + int64(header.offset) != int64(header.fileSize):
+      if dataSize + int64(header.offset) > int64(header.fileSize):
         raise BMPError("invalid dataSize")
 
     if dataSize > int64(info.imageSize):
