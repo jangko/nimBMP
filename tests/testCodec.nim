@@ -110,7 +110,7 @@ when isMainModule:
   proc main() =
     var success = true
     success = success and testCodec()
-    #success = success and testGray()
+    success = success and testGray()
     quit(if success: 0 else: -1)
 
   main()
