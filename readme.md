@@ -5,6 +5,7 @@ BMP Encoder and Decoder written in Nim
 [![Windows build status (Appveyor)](https://img.shields.io/appveyor/ci/jangko/nimBMP/master.svg?label=Windows "Windows build status (Appveyor)")](https://ci.appveyor.com/project/jangko/nimBMP)
 ![nimble](https://img.shields.io/badge/available%20on-nimble-yellow.svg?style=flat-square)
 ![license](https://img.shields.io/github/license/citycide/cascade.svg?style=flat-square)
+![Github action](https://github.com/jangko/nimBMP/workflows/nimBMP%20CI/badge.svg)
 
 supported standard color mode:
 

@@ -1,6 +1,6 @@
 import ../nimBMP, os, unittest
 
-const testFolder = "misc"
+const testFolder = "tests" / "misc"
 
 suite "misc test":
   test "1bit":

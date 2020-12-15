@@ -42,8 +42,8 @@ proc compareFile(src, tgt: string): bool =
 
 proc compareSuite*(baseDir, suite: string): bool =
   result = true
-  let suiteDir = baseDir & suite
-  let compareDir = suiteDir & DirSep & "compare24" & DirSep
+  let suiteDir = baseDir / suite
+  let compareDir = suiteDir / "compare24"
   let ext = ExtSep & "bmp"
 
   stdout.styledWriteLine(fgCyan, suite)
@@ -56,7 +56,7 @@ proc compareSuite*(baseDir, suite: string): bool =
     if ext != ".bmp": continue
     if path.name[0] == 'x': continue
 
-    let cmpName = compareDir & path.name & ext
+    let cmpName = compareDir / path.name & ext
     if compareFile(fileName, cmpName):
       stdout.styledWriteLine("  ", path.name, "...", fgGreen, "[PASS]")
     else:
@@ -66,7 +66,7 @@ proc compareSuite*(baseDir, suite: string): bool =
 when isMainModule:
   proc main() =
     var success = true
-    let baseDir = "bmptestsuite-0.9" & DirSep
+    let baseDir = "tests" / "bmptestsuite-0.9"
 
     success = success and compareSuite(baseDir, "corrupt")
     success = success and compareSuite(baseDir, "questionable")
