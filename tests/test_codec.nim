@@ -1,4 +1,4 @@
-import nimBMP, streams, strutils, os, testSuite, terminal
+import nimBMP, streams, strutils, os, test_suite, terminal
 
 type
   Image = object
@@ -97,13 +97,13 @@ when false:
   mini.save("gray\\compare24\\8bpp.bmp")
 
 proc testGray(): bool =
-  let graySuite = "gray"
+  let graySuite = "tests" / "gray"
   createDir(graySuite)
-  let suiteDir = "bmptestsuite-0.9" & DirSep
-  var bmp = loadBMP8(suiteDir & "valid" & DirSep & "24bpp-320x240.bmp")
+  let suiteDir = "tests" / "bmptestsuite-0.9"
+  var bmp = loadBMP8(suiteDir / "valid" / "24bpp-320x240.bmp")
 
-  saveBMP8(graySuite & DirSep & "8bpp.bmp", bmp.data, bmp.width, bmp.height)
-  let baseDir = "." & DirSep
+  saveBMP8(graySuite / "8bpp.bmp", bmp.data, bmp.width, bmp.height)
+  let baseDir = "tests"
   compareSuite(baseDir, graySuite)
 
 when isMainModule:
