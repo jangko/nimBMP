@@ -14,12 +14,10 @@ proc test(env, path: string) =
   if existsEnv"TEST_LANG":
     lang = getEnv"TEST_LANG"
 
-  if not dirExists "build":
-    mkDir "build"
   exec "nim " & lang & " " & env &
-    " --outdir:build -r --hints:off --warnings:off " & path
+    " -r --hints:off --warnings:off " & path
 
-task tests, "Run tests":
+task test, "Run tests":
   test "-d:debug", "tests/test_codec.nim"
   test "-d:debug", "tests/test_suite.nim"
   test "-d:debug", "tests/test_misc.nim"
@@ -31,3 +29,8 @@ task tests, "Run tests":
   test "-d:release --gc:arc", "tests/test_codec.nim"
   test "-d:release --gc:arc", "tests/test_suite.nim"
   test "-d:release --gc:arc", "tests/test_misc.nim"
+
+task testvcc, "Run tests with vcc compiler":
+  test "--cc:vcc -d:release", "tests/test_codec.nim"
+  test "--cc:vcc -d:release", "tests/test_suite.nim"
+  test "--cc:vcc -d:release", "tests/test_misc.nim"
